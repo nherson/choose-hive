@@ -1,0 +1,31 @@
+#!/bin/bash
+
+ID_FILE=${HOME}/.ssh/id_rsa
+USER=csXXX-XX
+
+min_users=NONE
+min_users_host=0
+
+for i in {1..28}; do
+  echo -n "Checking if hive$i is up..."
+  if ping -W 1 -c 1 hive$i.cs.berkeley.edu > /dev/null; then
+    user_data=$(ssh -o PasswordAuthentication=no -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $ID_FILE $USER@hive$i.cs.berkeley.edu "w -h" 2>/dev/null)
+    if [[ "$?" == "0" ]]; then
+      echo " it is."
+      users=$(echo "$user_data" | wc -l | tr -d ' ')
+      if [[ "$min_users" == "NONE" ]] || (("$users" < "$min_users")); then
+        ## DEBUG
+        echo "New min_users found: $users on hive$i"
+        min_users=$users
+        min_users_host=$i
+      fi
+    else
+      echo " problem communicating via SSH, skipping hive$i"
+    fi
+  else
+    echo " ping to hive$i failed, skipping"
+  fi
+done
+
+echo "Least congested hive (fewest users) is hive${min_users_host} with ${min_users}. Logging in now..."
+ssh -i $ID_FILE ${USER}@hive${min_users_host}.cs.berkeley.edu
