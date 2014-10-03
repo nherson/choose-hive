@@ -22,6 +22,7 @@ cs61c-as tty9                      Wed18    6days 20:29   0.57s gnome-session --
 cs61c-au pts/9    :3.0             16:15    1:10m  8:59m  0.02s bash
 cs61c-au pts/11   :3.0             16:42   43:15  59.50s 59.49s java -jar /home/ff/cs61c/bin/Mars.jar
 cs61c-au tty10                     16:13    6days  2:06   0.13s gnome-session --session=ubuntu
+cs194-ap pts/1    c-24-130-184-210 17:44    0.00s  0.13s  0.00s w
 ```
 
 This was hive2.  Meanwhile hive7 looked like this:
