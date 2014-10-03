@@ -56,4 +56,4 @@ TODO
 
 Contributing
 =======
-Think this is nifty? Submit a pull request to help make it better!
+Think this is nifty? Submit a pull request to help make it better!  This script was only tested on OSX.  If you run Linux and something breaks, let me know so that I can fix it.
