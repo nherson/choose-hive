@@ -29,9 +29,10 @@ This was hive2.  Meanwhile hive7 looked like this:
 ```
  17:30:14 up 23:15,  1 user,  load average: 0.00, 0.02, 0.05
 USER     TTY      FROM              LOGIN@   IDLE   JCPU   PCPU WHAT
+cs194-ap pts/1    c-24-130-184-210 17:44    0.00s  0.13s  0.00s w
 ```
 
-Yeah that's right, empty.
+Yeah that's right, all to myself.
 
 Use this script to get yourself onto the hive machine with the least active connections.
 
