@@ -31,7 +31,7 @@ This was hive2.  Meanwhile hive7 looked like this:
 USER     TTY      FROM              LOGIN@   IDLE   JCPU   PCPU WHAT
 ```
 
-Yeah, empty.
+Yeah that's right, empty.
 
 Use this script to get yourself onto the hive machine with the least active connections.
 
@@ -39,7 +39,7 @@ Use this script to get yourself onto the hive machine with the least active conn
 Setup and Usage
 =====
 
-* Make sure you have a private/public keypair and put your public key in ~/.ssh/authorized_keys on any hive machine. Keep your private key private (this goes without saying)
+* Make sure you have a private/public keypair and put your public key in `~/.ssh/authorized_keys` on any hive machine. Keep your private key private (this goes without saying)
 * Use `ssh-add` to add your private key to your ssh agent
 * Clone the repo: `git clone https://github.com/nherson/choose-hive`
 * Edit the variables in the top of the script, filling them in as necessary
