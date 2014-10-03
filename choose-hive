@@ -1,7 +1,35 @@
 #!/bin/bash
 
-ID_FILE=${HOME}/.ssh/id_rsa
-USER=csXXX-XX
+read -d '' USAGE <<EOF
+choose-hive:
+  -u -- user to log into hive servers as (e.g. cs194-ap)
+  -i -- path to private key to use
+  -h -- display this help message
+EOF
+
+while getopts ":u:i:h" opt; do
+  case $opt in
+    u)
+      HIVE_USER=$OPTARG
+      ;;
+    i)
+      ID_FILE=$OPTARG
+      ;;
+    h)
+      echo "$USAGE"
+      exit 127
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument."
+      exit 1
+      ;;
+  esac
+done
+
+# If no user is specified, bail
+[[ -z $HIVE_USER ]] && echo "No user specified. Run with -u USER" && exit 1
+# If no private key path is given, choose a sane default
+[[ -z $ID_FILE ]] && echo "Warning: No private key path given, defaulting to $HOME/.ssh/id_rsa" && ID_FILE=${HOME}/.ssh/id_rsa
 
 min_users=NONE
 min_users_host=0
@@ -9,7 +37,7 @@ min_users_host=0
 for i in {1..28}; do
   echo -n "Checking if hive$i is up..."
   if ping -W 1 -c 1 hive$i.cs.berkeley.edu > /dev/null; then
-    user_data=$(ssh -o PasswordAuthentication=no -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $ID_FILE $USER@hive$i.cs.berkeley.edu "w -h" 2>/dev/null)
+    user_data=$(ssh -o PasswordAuthentication=no -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $ID_FILE $HIVE_USER@hive$i.cs.berkeley.edu "w -h" 2>/dev/null)
     if [[ "$?" == "0" ]]; then
       echo " it is."
       users=$(echo "$user_data" | wc -l | tr -d ' ')
@@ -27,5 +55,12 @@ for i in {1..28}; do
   fi
 done
 
+if [[ "$min_users" == "NONE" ]]; then
+  echo "There was a problem and no hive server could be connected to."
+  echo "Make sure that your SSH keys are setup properly; also, you may need to use the -i flag,"
+  echo "and specify the path to your private key."
+  exit 2
+fi
+
 echo "Least congested hive (fewest users) is hive${min_users_host} with ${min_users}. Logging in now..."
-ssh -i $ID_FILE ${USER}@hive${min_users_host}.cs.berkeley.edu
+ssh -i $ID_FILE ${HIVE_USER}@hive${min_users_host}.cs.berkeley.edu
