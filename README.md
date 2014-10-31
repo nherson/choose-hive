@@ -48,6 +48,13 @@ Setup and Usage
   * The default private key path is `${HOME}/.ssh/id_rsa`, so you may not need the `-i` flag. 
 * (optional) Add the location of `choose-hive` to your path so it can be run from anywhere
 
+Changelog
+====
+* October 30, 2014
+  * Use subshells to implement parallelism
+    * This massively speeds up the entire process because network latency gets handled all in parallel
+    * Use pipes and locks (via files) to communicate number of users back to the parent process
+
 TODO
 =====
 * Add support for second floor Soda machines
