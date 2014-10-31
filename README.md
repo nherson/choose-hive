@@ -44,14 +44,12 @@ Setup and Usage
 * Make sure you have a private/public keypair and put your public key in `~/.ssh/authorized_keys` on any hive machine. Keep your private key private (this goes without saying)
 * Use `ssh-add` to add your private key to your ssh agent
 * Clone the repo: `git clone https://github.com/nherson/choose-hive`
-* Edit the variables in the top of the script, filling them in as necessary
-* Run `./choose-hive`, and you're done. It'll find the best hive and login
-* (optional) Add the location of `choose-hive` to your path
-
+* Run `./choose-hive -u YOUR_CS_ACCT -i PATH_TO_PRIVATE_KEY`, and you're done. It'll find the best hive and login
+  * The default private key path is `${HOME}/.ssh/id_rsa`, so you may not need the `-i` flag. 
+* (optional) Add the location of `choose-hive` to your path so it can be run from anywhere
 
 TODO
 =====
-* Add options like `-u` for `USER` and `-i` for the path to a private key
 * Add support for second floor Soda machines
 * Support for a config file to source
 * Create an install script to make `$PREFIX/bin` and place the `choose-hive` script there
