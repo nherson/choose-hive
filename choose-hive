@@ -26,32 +26,68 @@ while getopts ":u:i:h" opt; do
   esac
 done
 
+# SCRIPT VARIABLES
+
 # If no user is specified, bail
 [[ -z $HIVE_USER ]] && echo "No user specified. Run with -u USER" && exit 1
 # If no private key path is given, choose a sane default
 [[ -z $ID_FILE ]] && echo "Warning: No private key path given, defaulting to $HOME/.ssh/id_rsa" && ID_FILE=${HOME}/.ssh/id_rsa
+# Location of temp file to use as a pseudo-lock
+LOCK_FILE=/tmp/choose-hive.lock
+# Location of pipe file for subshells to relay number of users
+PIPE_FILE=/tmp/choose-hive.pipe
 
 min_users=NONE
 min_users_host=0
 
-for i in {1..28}; do
-  echo -n "Checking if hive$i is up..."
-  if ping -W 1 -c 1 hive$i.cs.berkeley.edu > /dev/null; then
+# SUBROUTINES
+
+# Checks the host at the given number
+# e.g. `check_host 3` checks the status of hive3
+# Uses locking via mkdir to let the SSH tasks run in parallel
+check_host() {
+  i=$1
+  if ping -W 1 -c 1 -t 2 hive$i.cs.berkeley.edu > /dev/null; then
     user_data=$(ssh -o PasswordAuthentication=no -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $ID_FILE $HIVE_USER@hive$i.cs.berkeley.edu "w -h" 2>/dev/null)
     if [[ "$?" == "0" ]]; then
-      echo " it is."
       users=$(echo "$user_data" | wc -l | tr -d ' ')
-      if [[ "$min_users" == "NONE" ]] || (("$users" < "$min_users")); then
-        ## DEBUG
-        echo "New min_users found: $users on hive$i"
-        min_users=$users
-        min_users_host=$i
-      fi
+      lockfile -1 $LOCK_FILE
+      echo "$users:$i" > $PIPE_FILE
     else
-      echo " problem communicating via SSH, skipping hive$i"
+      lockfile -1 $LOCK_FILE
+      echo "-1:$i" > $PIPE_FILE
     fi
   else
-    echo " ping to hive$i failed, skipping"
+    lockfile -1 $LOCK_FILE
+    echo "-1:$i" > $PIPE_FILE
+  fi
+  rm -rf $LOCK_FILE
+}
+
+rm -rf $PIPE_FILE
+mkfifo $PIPE_FILE
+
+for i in {1..28}; do
+  check_host $i &
+done
+
+
+echo "Awaiting responses..."
+for i in {1..28}; do
+  read -r report < $PIPE_FILE
+  user_count=$(echo $report | cut -f1 -d':')
+  host=$(echo $report | cut -f2 -d':')
+  if [[ ! "$user_count" == "-1" ]]; then
+    echo "Users on hive$host: $user_count"
+    if [[ "$min_users" == "NONE" ]]; then
+      min_users=$user_count
+      min_users_host=$host
+    elif [ "$user_count" -lt "$min_users" ]; then
+      min_users=$user_count
+      min_users_host=$host
+    fi
+  else
+    echo "Problem communicating with hive$host... skipping"
   fi
 done
 
@@ -61,6 +97,8 @@ if [[ "$min_users" == "NONE" ]]; then
   echo "and specify the path to your private key."
   exit 2
 fi
+
+rm -rf $PIPE_FILE
 
 echo "Least congested hive (fewest users) is hive${min_users_host} with ${min_users}. Logging in now..."
 ssh -i $ID_FILE ${HIVE_USER}@hive${min_users_host}.cs.berkeley.edu
