@@ -26,6 +26,7 @@ while getopts ":u:i:h" opt; do
   esac
 done
 
+
 # SCRIPT VARIABLES
 
 # If no user is specified, bail
@@ -39,6 +40,7 @@ PIPE_FILE=/tmp/choose-hive.pipe
 
 min_users=NONE
 min_users_host=0
+
 
 # SUBROUTINES
 
@@ -64,6 +66,21 @@ check_host() {
   rm -rf $LOCK_FILE
 }
 
+# Given an number of hosts and 
+# and array of users on each host,
+# pretty-prints a table showing usage of each hive.
+output_table() {
+  entries="$1"
+  shift
+  values=("${@}")
+  bar="================================="
+  echo "$bar"
+  for ((i=0; i < $entries; i++)); do
+    echo -e "| hive$((i+1))   \t| ${values[$i]}\t\t|"
+  done
+  echo "$bar"
+}
+
 rm -rf $PIPE_FILE
 mkfifo $PIPE_FILE
 
@@ -71,14 +88,15 @@ for i in {1..28}; do
   check_host $i &
 done
 
-
-echo "Awaiting responses..."
+# After forking the subprocesses, have the master process
+# repeatedly read from a pipe to collect responses
+echo "Awaiting responses, this may take a moment..."
 for i in {1..28}; do
   read -r report < $PIPE_FILE
   user_count=$(echo $report | cut -f1 -d':')
   host=$(echo $report | cut -f2 -d':')
   if [[ ! "$user_count" == "-1" ]]; then
-    echo "Users on hive$host: $user_count"
+    users[$host]=$user_count
     if [[ "$min_users" == "NONE" ]]; then
       min_users=$user_count
       min_users_host=$host
@@ -87,10 +105,11 @@ for i in {1..28}; do
       min_users_host=$host
     fi
   else
-    echo "Problem communicating with hive$host... skipping"
+    users[$host]="Error"
   fi
 done
 
+# If no server could be reached
 if [[ "$min_users" == "NONE" ]]; then
   echo "There was a problem and no hive server could be connected to."
   echo "Make sure that your SSH keys are setup properly; also, you may need to use the -i flag,"
@@ -98,7 +117,12 @@ if [[ "$min_users" == "NONE" ]]; then
   exit 2
 fi
 
+# Pretty print the table of data collected
+output_table 28 "${users[@]}"
+
+# Clean up
 rm -rf $PIPE_FILE
 
+# Inform the user and login to the hive with the fewest users
 echo "Least congested hive (fewest users) is hive${min_users_host} with ${min_users}. Logging in now..."
 ssh -i $ID_FILE ${HIVE_USER}@hive${min_users_host}.cs.berkeley.edu
