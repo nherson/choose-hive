@@ -125,4 +125,5 @@ rm -rf $PIPE_FILE
 
 # Inform the user and login to the hive with the fewest users
 echo "Least congested hive (fewest users) is hive${min_users_host} with ${min_users}. Logging in now..."
+echo ""
 ssh -i $ID_FILE ${HIVE_USER}@hive${min_users_host}.cs.berkeley.edu
