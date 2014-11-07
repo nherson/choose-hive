@@ -52,7 +52,11 @@ check_host() {
   if ping -W 1 -c 1 -t 2 hive$i.cs.berkeley.edu > /dev/null; then
     user_data=$(ssh -o PasswordAuthentication=no -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $ID_FILE $HIVE_USER@hive$i.cs.berkeley.edu "w -h" 2>/dev/null)
     if [[ "$?" == "0" ]]; then
-      users=$(echo "$user_data" | wc -l | tr -d ' ')
+      if [[ "$user_data" == "" ]]; then
+        users=0
+      else
+        users=$(echo "$user_data" | wc -l | tr -d ' ')
+      fi
       lockfile -1 $LOCK_FILE
       echo "$users:$i" > $PIPE_FILE
     else
